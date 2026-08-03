@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Samsu++</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --sidebar: #f7f8fa;
+      --surface: #ffffff;
+      --soft: #f2f4f7;
+      --hover: #e9edf3;
+      --border: #dde2ea;
+      --border-strong: #c9d0dc;
+      --text: #18202b;
+      --muted: #687386;
+      --brand: #5b55e7;
+      --brand-dark: #4942cf;
+      --brand-soft: #eeedff;
+      --success: #198754;
+      --warning: #a76500;
+      --danger: #c73f4b;
+      --shadow: 0 18px 55px rgba(26, 35, 52, .12);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body {
+      color: var(--text);
+      background: var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(91, 85, 231, .2);
+      outline-offset: 2px;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 282px minmax(0, 1fr);
+      width: 100%;
+      height: 100dvh;
+      min-height: 0;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 14px;
+      overflow: hidden;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      z-index: 20;
+    }
+
+    .brand { display: flex; align-items: center; gap: 11px; padding: 5px 6px 15px; }
+    .logo {
+      display: grid; place-items: center; width: 40px; height: 40px;
+      color: white; font-weight: 850; letter-spacing: -.04em;
+      border-radius: 13px;
+      background: linear-gradient(145deg, #756ff4, #4b43cb);
+      box-shadow: 0 9px 22px rgba(91, 85, 231, .25);
+    }
+    .brand-copy { min-width: 0; }
+    .brand-name { margin: 0; font-size: 18px; font-weight: 780; }
+    .brand-subtitle { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+
+    .new-chat {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 11px 13px; border: 1px solid var(--border-strong);
+      border-radius: 12px; background: var(--surface); cursor: pointer; font-weight: 700;
+      transition: .18s ease;
+    }
+    .new-chat:hover { border-color: var(--brand); color: var(--brand); transform: translateY(-1px); }
+
+    .side-section { display: flex; align-items: center; justify-content: space-between; margin: 20px 7px 8px; }
+    .side-title { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    .count { min-width: 22px; padding: 2px 7px; border-radius: 99px; background: var(--soft); color: var(--muted); font-size: 11px; text-align: center; }
+
+    .search-wrap { position: relative; }
+    .search {
+      width: 100%; padding: 10px 12px 10px 34px; border: 1px solid var(--border);
+      border-radius: 10px; background: rgba(255,255,255,.75); color: var(--text); outline: 0;
+    }
+    .search:focus { border-color: var(--brand); background: white; }
+    .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+
+    .history { flex: 1; min-height: 0; overflow-y: auto; margin-top: 9px; padding-right: 2px; scrollbar-width: thin; }
+    .history-item { display: grid; grid-template-columns: minmax(0,1fr) 30px; gap: 4px; align-items: center; padding: 4px; border-radius: 11px; }
+    .history-item:hover, .history-item.active { background: var(--hover); }
+    .history-open { min-width: 0; padding: 8px; border: 0; background: transparent; text-align: left; cursor: pointer; }
+    .history-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 650; }
+    .history-date { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .history-delete { width: 28px; height: 28px; border: 0; border-radius: 8px; color: var(--muted); background: transparent; cursor: pointer; opacity: 0; }
+    .history-item:hover .history-delete, .history-delete:focus { opacity: 1; }
+    .history-delete:hover { color: var(--danger); background: #fff0f1; }
+
+    .sidebar-footer { padding: 12px 5px 2px; border-top: 1px solid var(--border); }
+    .workspace-button {
+      display: flex; align-items: center; justify-content: space-between; width: 100%;
+      padding: 10px; border: 0; border-radius: 10px; background: transparent; cursor: pointer;
+    }
+    .workspace-button:hover { background: var(--hover); }
+    .workspace-button span:first-child { display: flex; align-items: center; gap: 8px; font-weight: 680; }
+
+    .main { position: relative; display: grid; grid-template-rows: 64px minmax(0,1fr) auto; min-width: 0; min-height: 0; overflow: hidden; }
+    .topbar { display: flex; align-items: center; gap: 12px; padding: 0 22px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.92); backdrop-filter: blur(12px); z-index: 10; }
+    .menu-button { display: none; width: 38px; height: 38px; border: 1px solid var(--border); border-radius: 10px; background: white; cursor: pointer; }
+    .conversation-heading { min-width: 0; flex: 1; }
+    .conversation-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 740; }
+    .status { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px rgba(25,135,84,.1); }
+    .status.busy .status-dot { background: var(--warning); box-shadow: 0 0 0 4px rgba(167,101,0,.1); animation: pulse 1.15s infinite; }
+    .mode-switch { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--border); border-radius: 10px; background: var(--soft); }
+    .mode-button { padding: 6px 9px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 750; }
+    .mode-button:hover { color: var(--text); }
+    .mode-button.active { color: var(--brand-dark); background: white; box-shadow: 0 2px 8px rgba(26,35,52,.09); }
+    @keyframes pulse { 50% { opacity: .4; } }
+
+    .chat-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scroll-behavior: smooth; }
+    .messages { width: min(880px, 100%); min-height: 100%; margin: 0 auto; padding: 34px 24px 50px; }
+    .welcome { display: grid; place-items: center; min-height: calc(100dvh - 230px); padding: 30px 0; text-align: center; }
+    .welcome-inner { max-width: 670px; }
+    .welcome-logo { display: grid; place-items: center; width: 62px; height: 62px; margin: 0 auto 20px; color: white; border-radius: 20px; background: linear-gradient(145deg,#756ff4,#4b43cb); box-shadow: 0 18px 40px rgba(91,85,231,.23); font-size: 22px; font-weight: 850; }
+    .welcome h1 { margin: 0; font-size: clamp(27px, 5vw, 42px); letter-spacing: -.045em; }
+    .welcome p { max-width: 580px; margin: 13px auto 26px; color: var(--muted); line-height: 1.65; }
+    .suggestions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; text-align: left; }
+    .suggestion { padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: white; cursor: pointer; transition: .18s ease; }
+    .suggestion:hover { border-color: #aaa6ff; background: var(--brand-soft); transform: translateY(-2px); }
+    .suggestion strong { display: block; margin-bottom: 4px; font-size: 13px; }
+    .suggestion span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+
+    .message { display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 12px; margin-bottom: 25px; }
+    .avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; font-size: 11px; font-weight: 800; }
+    .message.user .avatar { color: #46505f; background: var(--soft); }
+    .message.assistant .avatar { color: white; background: linear-gradient(145deg,#756ff4,#4b43cb); }
+    .message-content { min-width: 0; padding-top: 2px; }
+    .message-label { margin-bottom: 6px; font-size: 12px; font-weight: 780; }
+    .bubble { overflow-wrap: anywhere; white-space: pre-wrap; font-size: 15px; line-height: 1.7; }
+    .bubble code { padding: 2px 5px; border-radius: 5px; background: var(--soft); font-family: "Cascadia Code", Consolas, monospace; font-size: .9em; }
+    .code-block { position: relative; margin: 12px 0; overflow: hidden; border: 1px solid #2d3440; border-radius: 12px; background: #171c24; color: #e9edf4; }
+    .code-head { display: flex; justify-content: space-between; padding: 8px 12px; background: #222936; color: #aeb8c7; font-size: 11px; }
+    .copy-code { border: 0; background: transparent; color: #d8dfeb; cursor: pointer; }
+    .code-block pre { margin: 0; padding: 14px; overflow: auto; white-space: pre; }
+    .code-block code { padding: 0; background: transparent; color: inherit; }
+    .typing:empty::after { content: ""; display: inline-block; width: 7px; height: 16px; background: var(--brand); animation: blink .8s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .task-card, .approval-card { margin: 10px 0 25px 46px; padding: 16px; border: 1px solid var(--border); border-radius: 15px; background: #fbfbfd; box-shadow: 0 8px 24px rgba(26,35,52,.06); }
+    .task-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .task-card h3, .approval-card h3 { margin: 0; font-size: 14px; }
+    .task-pill { padding: 4px 8px; border-radius: 99px; background: var(--brand-soft); color: var(--brand-dark); font-size: 11px; font-weight: 760; }
+    .task-progress { height: 7px; overflow: hidden; border-radius: 99px; background: var(--hover); }
+    .task-progress-bar { width: 12%; height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--brand),#8a85ff); transition: width .25s ease; }
+    .task-detail { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+    .approval-description { margin: 8px 0 12px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .file-plan { display: grid; gap: 7px; max-height: 270px; overflow: auto; margin: 0 0 14px; }
+    .file-plan-item { padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: white; }
+    .file-path { display: block; font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; font-weight: 700; }
+    .file-purpose { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .approval-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .action-button { padding: 9px 13px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+    .action-button.reject { border: 1px solid var(--border); background: white; }
+    .action-button.approve { border: 1px solid var(--brand); background: var(--brand); color: white; }
+    .action-button.approve:hover { background: var(--brand-dark); }
+    .action-button:disabled { opacity: .55; cursor: not-allowed; }
+    .result-list { display: grid; gap: 7px; margin-top: 12px; }
+    .result-file { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; background: white; }
+    .result-file code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+    .result-file button { flex: 0 0 auto; border: 0; background: transparent; color: var(--brand); cursor: pointer; font-weight: 700; font-size: 12px; }
+    .phase-continuation { margin-top: 14px; padding: 14px; border: 1px solid #c9c6ff; border-radius: 12px; background: var(--brand-soft); }
+    .phase-continuation strong { display: block; color: var(--brand-dark); font-size: 13px; }
+    .phase-continuation p { margin: 6px 0 11px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+    .composer-area { padding: 0 22px 18px; background: linear-gradient(180deg,rgba(255,255,255,0),#fff 20%); z-index: 8; }
+    .composer-shell { width: min(880px,100%); margin: 0 auto; }
+    .attachments { display: none; gap: 7px; overflow-x: auto; padding: 0 3px 8px; }
+    .attachments.visible { display: flex; }
+    .attachment { display: flex; align-items: center; gap: 7px; max-width: 240px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 9px; background: white; font-size: 12px; }
+    .attachment-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .attachment-remove { border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+    .composer { display: grid; grid-template-columns: 40px minmax(0,1fr) auto; align-items: end; gap: 8px; padding: 9px; border: 1px solid var(--border-strong); border-radius: 18px; background: white; box-shadow: 0 10px 35px rgba(26,35,52,.1); }
+    .composer:focus-within { border-color: var(--brand); box-shadow: 0 10px 35px rgba(26,35,52,.1),0 0 0 3px rgba(91,85,231,.09); }
+    .icon-button { display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 11px; background: transparent; color: var(--muted); cursor: pointer; }
+    .icon-button:hover { background: var(--soft); color: var(--text); }
+    .message-input { width: 100%; max-height: 180px; padding: 9px 4px; resize: none; border: 0; outline: 0; background: transparent; color: var(--text); line-height: 1.5; }
+    .send { display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 12px; background: var(--brand); color: white; cursor: pointer; }
+    .send:hover { background: var(--brand-dark); }
+    .send:disabled { background: #b8b5e9; cursor: not-allowed; }
+    .stop { display: none; background: #262d38; }
+    .generating .send { display: none; }
+    .generating .stop { display: grid; }
+    .composer-hint { margin: 8px 3px 0; color: var(--muted); font-size: 11px; text-align: center; }
+
+    .drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(21,27,37,.38); z-index: 30; }
+    .workspace-drawer { position: fixed; z-index: 50; top: 0; right: 0; width: min(440px,100%); height: 100dvh; display: grid; grid-template-rows: auto auto minmax(0,1fr); transform: translateX(105%); transition: transform .22s ease; background: white; border-left: 1px solid var(--border); box-shadow: var(--shadow); }
+    .workspace-drawer.open { transform: translateX(0); }
+    .drawer-overlay.open { display: block; }
+    .workspace-head { display: flex; align-items: center; justify-content: space-between; padding: 18px; border-bottom: 1px solid var(--border); }
+    .workspace-head h2 { margin: 0; font-size: 17px; }
+    .drawer-close { width: 36px; height: 36px; border: 0; border-radius: 10px; background: var(--soft); cursor: pointer; }
+    .workspace-path { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+    .back-button { border: 0; border-radius: 8px; padding: 7px 9px; background: var(--soft); cursor: pointer; }
+    .path-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-family: Consolas, monospace; font-size: 12px; }
+    .workspace-content { min-height: 0; overflow-y: auto; padding: 12px; }
+    .workspace-item { display: grid; grid-template-columns: 28px minmax(0,1fr) auto; gap: 8px; align-items: center; width: 100%; padding: 10px; border: 0; border-radius: 10px; background: transparent; text-align: left; cursor: pointer; }
+    .workspace-item:hover { background: var(--soft); }
+    .workspace-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; }
+    .workspace-item-size { color: var(--muted); font-size: 11px; }
+    .file-preview { margin: 8px 0 0; padding: 13px; overflow: auto; border: 1px solid var(--border); border-radius: 11px; background: #f7f8fa; white-space: pre-wrap; font-family: Consolas, monospace; font-size: 12px; line-height: 1.55; }
+    .empty { padding: 30px 12px; color: var(--muted); text-align: center; font-size: 13px; }
+    .toast { position: fixed; z-index: 80; left: 50%; bottom: 24px; max-width: min(440px,calc(100% - 28px)); padding: 11px 15px; transform: translate(-50%,24px); border-radius: 10px; background: #202733; color: white; opacity: 0; pointer-events: none; transition: .2s ease; box-shadow: var(--shadow); font-size: 13px; }
+    .toast.show { opacity: 1; transform: translate(-50%,0); }
+
+    @media (max-width: 780px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: fixed; inset: 0 auto 0 0; width: min(300px,86vw); transform: translateX(-105%); transition: transform .2s ease; box-shadow: var(--shadow); z-index: 45; }
+      .sidebar.open { transform: translateX(0); }
+      .menu-button { display: grid; place-items: center; }
+      .topbar { padding: 0 14px; }
+      .messages { padding: 24px 15px 38px; }
+      .composer-area { padding: 0 12px 12px; }
+      .suggestions { grid-template-columns: 1fr; }
+      .status span:last-child { display: none; }
+      .mode-switch { margin-left: auto; }
+      .mode-button { padding: 6px 7px; }
+      .task-card, .approval-card { margin-left: 44px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside id="sidebar" class="sidebar" aria-label="Conversation history">
+      <div class="brand">
+        <div class="logo">S+</div>
+        <div class="brand-copy">
+          <p class="brand-name">Samsu++</p>
+          <p class="brand-subtitle">Local AI workspace</p>
+        </div>
+      </div>
+      <button id="newChatButton" class="new-chat" type="button"><span>＋</span><span>New conversation</span></button>
+      <div class="side-section"><span class="side-title">Recent chats</span><span id="historyCount" class="count">0</span></div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input id="historySearch" class="search" type="search" placeholder="Search conversations" autocomplete="off">
+      </div>
+      <div id="historyList" class="history"></div>
+      <div class="sidebar-footer">
+        <button id="workspaceButton" class="workspace-button" type="button"><span><span>▱</span> Workspace files</span><span>›</span></button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button id="menuButton" class="menu-button" type="button" aria-label="Open menu">☰</button>
+        <div class="conversation-heading"><div id="conversationTitle" class="conversation-title">New conversation</div></div>
+        <div id="modeSwitch" class="mode-switch" aria-label="Response mode">
+          <button class="mode-button active" type="button" data-mode="auto" title="Automatically choose chat or file creation">Auto</button>
+          <button class="mode-button" type="button" data-mode="chat" title="Always answer inside the conversation">Chat</button>
+          <button class="mode-button" type="button" data-mode="files" title="Always create files in the workspace">Files</button>
+        </div>
+        <div id="status" class="status"><span class="status-dot"></span><span id="generationStatus">Qwen3 · Ready</span></div>
+      </header>
+
+      <div id="chatScroll" class="chat-scroll">
+        <section id="messages" class="messages" aria-live="polite"></section>
+      </div>
+
+      <div class="composer-area">
+        <div class="composer-shell">
+          <div id="attachmentList" class="attachments"></div>
+          <form id="chatForm" class="composer">
+            <input id="fileInput" type="file" multiple hidden>
+            <button id="attachButton" class="icon-button" type="button" title="Attach files" aria-label="Attach files">＋</button>
+            <textarea id="messageInput" class="message-input" rows="1" placeholder="Message Samsu++ or ask it to create files..." aria-label="Message"></textarea>
+            <button id="sendButton" class="send" type="submit" aria-label="Send">↑</button>
+            <button id="stopButton" class="send stop" type="button" aria-label="Stop">■</button>
+          </form>
+          <p id="routingHint" class="composer-hint">Auto mode understands the difference between showing code in chat and creating actual files.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="drawerOverlay" class="drawer-overlay"></div>
+  <aside id="workspaceDrawer" class="workspace-drawer" aria-label="Workspace files">
+    <div class="workspace-head"><h2>Workspace</h2><button id="workspaceClose" class="drawer-close" type="button">×</button></div>
+    <div class="workspace-path"><button id="workspaceBack" class="back-button" type="button">←</button><span id="workspacePath" class="path-text">Workspace root</span></div>
+    <div id="workspaceContent" class="workspace-content"></div>
+  </aside>
+  <div id="toast" class="toast"></div>
+
+  <script>
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+    const ui = {
+      sidebar: $("sidebar"), newChat: $("newChatButton"), historyCount: $("historyCount"), historySearch: $("historySearch"), historyList: $("historyList"),
+      menu: $("menuButton"), title: $("conversationTitle"), modeSwitch: $("modeSwitch"), routingHint: $("routingHint"), status: $("status"), statusText: $("generationStatus"), chatScroll: $("chatScroll"), messages: $("messages"),
+      form: $("chatForm"), input: $("messageInput"), send: $("sendButton"), stop: $("stopButton"), attach: $("attachButton"), fileInput: $("fileInput"), attachments: $("attachmentList"),
+      overlay: $("drawerOverlay"), workspaceButton: $("workspaceButton"), workspaceDrawer: $("workspaceDrawer"), workspaceClose: $("workspaceClose"), workspaceBack: $("workspaceBack"), workspacePath: $("workspacePath"), workspaceContent: $("workspaceContent"), toast: $("toast")
+    };
+
+    const userId = localStorage.getItem("samsu_user_id") || "zihad";
+    localStorage.setItem("samsu_user_id", userId);
+    let conversationId = localStorage.getItem("samsu_conversation_id") || createConversationId();
+    let conversations = [];
+    let attachedFiles = [];
+    let abortController = null;
+    let isGenerating = false;
+    let followOutput = true;
+    let currentWorkspacePath = "";
+    let toastTimer = null;
+    let routingMode = localStorage.getItem("samsu_routing_mode") || "auto";
+    localStorage.setItem("samsu_conversation_id", conversationId);
+
+    function createConversationId() {
+      return `chat-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+    }
+    function encodePath(value) { return encodeURIComponent(value); }
+    function delay(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+    function showToast(message) {
+      ui.toast.textContent = message;
+      ui.toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => ui.toast.classList.remove("show"), 2800);
+    }
+    function setBusy(value, label = "Qwen3 · Ready") {
+      isGenerating = value;
+      ui.form.classList.toggle("generating", value);
+      ui.send.disabled = value;
+      ui.input.disabled = value;
+      ui.status.classList.toggle("busy", value);
+      ui.statusText.textContent = label;
+    }
+    function scrollToBottom(force = false) {
+      if (!force && !followOutput) return;
+      requestAnimationFrame(() => { ui.chatScroll.scrollTop = ui.chatScroll.scrollHeight; });
+    }
+    function showWelcome() {
+      ui.messages.replaceChildren();
+      const wrap = document.createElement("div");
+      wrap.className = "welcome";
+      wrap.innerHTML = `<div class="welcome-inner"><div class="welcome-logo">S+</div><h1>What are we building?</h1><p>Chat naturally, attach a file, or ask Samsu++ to create a complete project. File requests are planned, approved once, saved, and verified inside your local workspace.</p><div class="suggestions"><button class="suggestion" data-prompt="Create a simple PDF file named welcome.pdf with a title and a short introduction."><strong>Create a PDF</strong><span>Generate and save a verified document</span></button><button class="suggestion" data-prompt="Build a small Dart console calculator project with tests and a README."><strong>Build a Dart project</strong><span>Create an organized multi-file project</span></button><button class="suggestion" data-prompt="Explain context engineering with a practical example."><strong>Learn a concept</strong><span>Use normal streaming conversation</span></button><button class="suggestion" data-prompt="Create an Excel workbook named expenses.xlsx with columns for date, category, description and amount."><strong>Create a workbook</strong><span>Prepare a structured Excel file</span></button></div></div>`;
+      wrap.querySelectorAll("[data-prompt]").forEach((button) => button.addEventListener("click", () => sendMessage(button.dataset.prompt)));
+      ui.messages.appendChild(wrap);
+    }
+
+    function createMessage(role, content = "") {
+      const row = document.createElement("article");
+      row.className = `message ${role}`;
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = role === "user" ? "U" : "S+";
+      const body = document.createElement("div");
+      body.className = "message-content";
+      const label = document.createElement("div");
+      label.className = "message-label";
+      label.textContent = role === "user" ? "You" : "Samsu++";
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = content;
+      body.append(label, bubble);
+      row.append(avatar, body);
+      ui.messages.appendChild(row);
+      scrollToBottom(true);
+      return { row, bubble };
+    }
+
+    function renderFormattedText(element, text) {
+      element.replaceChildren();
+      const parts = String(text || "").split(/```/);
+      parts.forEach((part, index) => {
+        if (index % 2 === 0) {
+          if (part) element.appendChild(document.createTextNode(part));
+          return;
+        }
+        let language = "code";
+        let code = part;
+        const newline = part.indexOf("\n");
+        if (newline >= 0) {
+          language = part.slice(0, newline).trim() || "code";
+          code = part.slice(newline + 1);
+        }
+        const block = document.createElement("div");
+        block.className = "code-block";
+        const head = document.createElement("div");
+        head.className = "code-head";
+        const lang = document.createElement("span");
+        lang.textContent = language;
+        const copy = document.createElement("button");
+        copy.className = "copy-code";
+        copy.type = "button";
+        copy.textContent = "Copy";
+        copy.addEventListener("click", async () => { await navigator.clipboard.writeText(code); copy.textContent = "Copied"; setTimeout(() => copy.textContent = "Copy", 1200); });
+        head.append(lang, copy);
+        const pre = document.createElement("pre");
+        const codeNode = document.createElement("code");
+        codeNode.textContent = code.replace(/\n$/, "");
+        pre.appendChild(codeNode);
+        block.append(head, pre);
+        element.appendChild(block);
+      });
+    }
+
+    function setRoutingMode(mode) {
+      if (!["auto", "chat", "files"].includes(mode)) mode = "auto";
+      routingMode = mode;
+      localStorage.setItem("samsu_routing_mode", mode);
+      ui.modeSwitch.querySelectorAll("[data-mode]").forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
+      ui.routingHint.textContent = mode === "chat"
+        ? "Chat mode always responds here and never creates a workspace file."
+        : mode === "files"
+          ? "Files mode plans and saves every request as workspace files."
+          : "Auto mode understands the difference between showing code in chat and creating actual files.";
+    }
+
+    function routeRequest(message) {
+      if (routingMode === "chat") return { useAgent: false, reason: "Chat mode" };
+      if (routingMode === "files") return { useAgent: true, reason: "Files mode" };
+
+      const text = message.toLowerCase().replace(/[’]/g, "'").replace(/\s+/g, " ").trim();
+
+      // Explicit negative instructions always win. This prevents requests such as
+      // “give me Dart code, but don't put it in a file” from starting the agent.
+      const refusesFile = [
+        /\b(?:do not|don't|dont|never)\b.{0,45}\b(?:create|make|save|write|give|put|return)\b.{0,35}\b(?:file|folder|workspace|download)\b/,
+        /\b(?:not|without)\s+(?:in|as)?\s*(?:a\s+)?file\b/,
+        /\b(?:in the chat|inside the chat|chat only|inline|paste (?:it|the code)|show (?:it|the code) here|code here|text only)\b/,
+        /\b(?:don't|do not)\s+(?:give|send|provide)\s+(?:me\s+)?(?:it\s+)?(?:as|in)\s+(?:a\s+)?file\b/
+      ].some((pattern) => pattern.test(text));
+      if (refusesFile) return { useAgent: false, reason: "Requested an in-chat answer" };
+
+      // Requests for code are normal chat unless the user also explicitly asks
+      // for a file, saved artifact, project, application, or workspace change.
+      const asksForCode = /\b(?:give|show|write|provide|generate|create)\b.{0,35}\b(?:dart|python|php|java|javascript|typescript|html|css|flutter|c\+\+|c#)?\s*code\b/.test(text);
+      const fileNoun = /\b(?:file|files|folder|project|application|app|website|workspace|pdf|docx|word document|xlsx|excel workbook|spreadsheet|pptx|powerpoint|presentation)\b/;
+      const saveLanguageFile = /\b(?:save|create|make|generate|write|give|provide)\b.{0,55}\b(?:\.dart|\.py|\.php|\.html|\.css|\.js|\.ts|\.java|\.cpp|\.cs|\.go|\.rs|dart file|python file|html file|php file)\b/;
+      const hasFileIntent = fileNoun.test(text) || saveLanguageFile.test(text);
+      if (asksForCode && !hasFileIntent) return { useAgent: false, reason: "Code requested in chat" };
+
+      const explanation = /\b(?:explain|what is|what are|how does|how do|show me how|tutorial|teach me|example|compare|review|debug|fix this code)\b/;
+      const explicitCreation = /\b(?:create|build|generate|make|prepare|produce|scaffold|save|export|give|provide)\b.{0,70}\b(?:actual files?|file|folder|project|application|app|website|workspace|pdf|docx|word document|xlsx|excel workbook|spreadsheet|pptx|powerpoint|presentation)\b/;
+      const continuationSave = /\b(?:save|export|put|write)\s+(?:this|that|it|the above|the previous (?:code|answer))\b.{0,55}(?:\bfile\b|\.[a-z0-9]{1,8}\b)/;
+      const explicitFilename = /\b(?:create|make|generate|save|export)\b.{0,70}\b[\w-]+\.(?:pdf|docx|xlsx|xlsm|pptx|dart|py|php|html|css|js|ts|java|cpp|cs|go|rs|md|txt)\b/;
+
+      const overridesExplanation = /\b(?:create the actual|build the actual|make the actual|save (?:it|them|this)|export (?:it|them|this)|do it now|build it for me)\b/;
+      if (explanation.test(text) && !overridesExplanation.test(text) && !continuationSave.test(text) && !explicitFilename.test(text)) {
+        return { useAgent: false, reason: "Explanatory question" };
+      }
+      if (explicitCreation.test(text) || continuationSave.test(text) || explicitFilename.test(text) || saveLanguageFile.test(text)) {
+        return { useAgent: true, reason: "Actual files requested" };
+      }
+      return { useAgent: false, reason: "Conversational request" };
+    }
+
+    function projectRootFor(message) {
+      const explicitFile = message.match(/\b[\w.-]+\.(pdf|docx|xlsx|xlsm|pptx|dart|py|html|php|js|ts|md|txt)\b/i);
+      const words = message.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((word) => word.length > 2 && !["create","build","generate","make","prepare","give","with","file","files","simple","very","named"].includes(word));
+      const slug = words.slice(0, 4).join("-").slice(0, 48) || "project";
+      return explicitFile && !/\b(project|app|application|website)\b/i.test(message) ? "generated" : `generated/${slug}`;
+    }
+
+    function buildAgentRequest(message) {
+      if (!/\b(this|that|above|previous|it)\b/i.test(message)) return message;
+      const assistantMessages = [...ui.messages.querySelectorAll(".message.assistant .bubble")];
+      const previous = assistantMessages.length > 1
+        ? assistantMessages[assistantMessages.length - 2].textContent.trim()
+        : "";
+      if (!previous) return message;
+      return `${message}\n\nThe user is referring to this previous assistant output:\n\n${previous.slice(0, 14000)}`;
+    }
+
+    function buildMessageWithFiles(text) {
+      if (!attachedFiles.length) return text;
+      let remaining = 12000;
+      const sections = attachedFiles.map((file) => {
+        const content = String(file.content || "").slice(0, remaining);
+        remaining -= content.length;
+        return `FILE PATH: ${file.relative_path}\nFILE NAME: ${file.name}\n\`\`\`\n${content}\n\`\`\``;
+      });
+      return `The user attached these workspace files:\n\n${sections.join("\n\n")}\n\nUSER REQUEST:\n${text}`;
+    }
+
+    async function streamChat(message, assistant) {
+      const response = await fetch("/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
+        body: JSON.stringify({ user_id: userId, conversation_id: conversationId, message, temperature: 0.7, max_tokens: 4096 }),
+        signal: abortController.signal
+      });
+      if (!response.ok) throw new Error(`Server error ${response.status}: ${await response.text()}`);
+      if (!response.body) throw new Error("Streaming is unavailable.");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let pendingText = "";
+      let paintFrame = 0;
+      const paint = () => {
+        paintFrame = 0;
+        if (!pendingText) return;
+        assistant.bubble.textContent += pendingText;
+        pendingText = "";
+        scrollToBottom();
+      };
+      const queueToken = (token) => {
+        pendingText += token;
+        if (!paintFrame) paintFrame = requestAnimationFrame(paint);
+      };
+      while (true) {
+        const chunk = await reader.read();
+        if (chunk.done) break;
+        buffer += decoder.decode(chunk.value, { stream: true });
+        const blocks = buffer.split(/\r?\n\r?\n/);
+        buffer = blocks.pop() || "";
+        blocks.forEach((block) => processStreamBlock(block, assistant, queueToken));
+      }
+      buffer += decoder.decode();
+      if (buffer.trim()) processStreamBlock(buffer, assistant, queueToken);
+      if (paintFrame) cancelAnimationFrame(paintFrame);
+      paint();
+      if (!assistant.bubble.textContent.trim()) assistant.bubble.textContent = "The model returned an empty response.";
+      renderFormattedText(assistant.bubble, assistant.bubble.textContent);
+    }
+
+    function processStreamBlock(block, assistant, queueToken) {
+      let type = "message";
+      const lines = [];
+      block.split(/\r?\n/).forEach((line) => {
+        if (line.startsWith("event:")) type = line.slice(6).trim();
+        if (line.startsWith("data:")) lines.push(line.slice(5).trim());
+      });
+      if (!lines.length) return;
+      const payload = JSON.parse(lines.join("\n"));
+      if (type === "error") throw new Error(payload.error || "Streaming failed.");
+      if (type === "tool_status") { ui.statusText.textContent = payload.message || "Using tools..."; return; }
+      if (type === "approval") { assistant.bubble.textContent = payload.message || "Approval is required."; renderToolApproval(payload.approval); return; }
+      if (typeof payload.token === "string") queueToken(payload.token);
+    }
+
+    async function startAgent(message, assistant, options = {}) {
+      const phaseNumber = Number(options.phaseNumber || 1);
+      const projectRoot = options.projectRoot || projectRootFor(message);
+      const completedFiles = Array.isArray(options.completedFiles) ? options.completedFiles : [];
+      const request = options.preserveRequest ? message : buildAgentRequest(message);
+      assistant.bubble.textContent = `Preparing Phase ${phaseNumber} file plan...`;
+      const response = await fetch("/agent/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          conversation_id: conversationId,
+          request,
+          project_root: projectRoot,
+          phase_number: phaseNumber,
+          phase_file_limit: 6,
+          completed_files: completedFiles
+        }),
+        signal: abortController.signal
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.detail || `Agent request failed (${response.status})`);
+      await monitorAgent(result.task_id, assistant, null, phaseNumber);
+    }
+
+    function createTaskCard(phaseNumber = 1) {
+      const card = document.createElement("section");
+      card.className = "task-card";
+      const head = document.createElement("div"); head.className = "task-card-head";
+      const title = document.createElement("h3"); title.textContent = `Workspace task · Phase ${phaseNumber}`;
+      const pill = document.createElement("span"); pill.className = "task-pill"; pill.textContent = "Planning";
+      const progress = document.createElement("div"); progress.className = "task-progress";
+      const bar = document.createElement("div"); bar.className = "task-progress-bar"; progress.appendChild(bar);
+      const detail = document.createElement("p"); detail.className = "task-detail"; detail.textContent = "Preparing the file plan...";
+      head.append(title, pill); card.append(head, progress, detail); ui.messages.appendChild(card); scrollToBottom(true);
+      return { card, pill, bar, detail };
+    }
+
+    async function monitorAgent(taskId, assistant, existingCard = null, phaseNumber = 1) {
+      const taskUi = existingCard || createTaskCard(phaseNumber);
+      while (true) {
+        if (abortController?.signal.aborted) throw new DOMException("Stopped", "AbortError");
+        const response = await fetch(`/agent/tasks/${encodePath(taskId)}`, { signal: abortController?.signal });
+        const task = await response.json();
+        if (!response.ok) throw new Error(task.detail || `Task check failed (${response.status})`);
+        if (task.status === "planning") {
+          taskUi.pill.textContent = "Planning"; taskUi.detail.textContent = "Samsu++ is deciding which files are required."; taskUi.bar.style.width = "14%";
+          await delay(1500); continue;
+        }
+        if (task.requires_approval && task.interrupts?.length) {
+          taskUi.card.remove();
+          const phase = task.state?.phase_number || task.interrupts[0]?.phase_number || 1;
+          assistant.bubble.textContent = `I prepared Phase ${phase}. Review these files and approve this phase to continue.`;
+          renderAgentApproval(taskId, task.interrupts[0], assistant);
+          ui.statusText.textContent = "Waiting for approval";
+          return;
+        }
+        if (["running","saving","verifying"].includes(task.status)) {
+          const state = task.state || {};
+          const current = Number(state.current_file_index || 0);
+          const total = Math.max((state.planned_files || []).length, 1);
+          taskUi.pill.textContent = "Building";
+          taskUi.detail.textContent = `Creating and verifying file ${Math.min(current + 1, total)} of ${total}.`;
+          taskUi.bar.style.width = `${Math.max(20, Math.min(92, (current / total) * 100))}%`;
+          assistant.bubble.textContent = "The approved files are being created in your local workspace.";
+          await delay(1500); continue;
+        }
+        if (task.status === "completed") {
+          taskUi.card.remove(); renderAgentResult(task, assistant); await loadWorkspace(currentWorkspacePath); return;
+        }
+        if (task.status === "failed") {
+          taskUi.card.remove(); throw new Error(task.state?.summary || task.state?.error || task.error || "The workspace task failed.");
+        }
+        if (task.status === "cancelled") {
+          taskUi.card.remove(); assistant.bubble.textContent = "The file task was cancelled. No planned files were created."; return;
+        }
+        await delay(1500);
+      }
+    }
+
+    function renderAgentApproval(taskId, approval, assistant) {
+      const card = document.createElement("section"); card.className = "approval-card";
+      const title = document.createElement("h3"); title.textContent = `Approve Phase ${approval.phase_number || 1}: ${approval.phase_title || "File plan"}`;
+      const description = document.createElement("p"); description.className = "approval-description"; description.textContent = approval.message || "Review the complete plan before files are written.";
+      const list = document.createElement("div"); list.className = "file-plan";
+      (approval.files || []).forEach((file) => {
+        const item = document.createElement("div"); item.className = "file-plan-item";
+        const path = document.createElement("span"); path.className = "file-path"; path.textContent = file.path;
+        const purpose = document.createElement("span"); purpose.className = "file-purpose"; purpose.textContent = file.purpose || "Project file";
+        item.append(path, purpose); list.appendChild(item);
+      });
+      const actions = document.createElement("div"); actions.className = "approval-actions";
+      const reject = document.createElement("button"); reject.className = "action-button reject"; reject.type = "button"; reject.textContent = "Reject";
+      const approve = document.createElement("button"); approve.className = "action-button approve"; approve.type = "button"; approve.textContent = "Approve and create";
+      const decide = async (approved) => {
+        approve.disabled = reject.disabled = true;
+        try {
+          const response = await fetch(`/agent/tasks/${encodePath(taskId)}/decision`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ approved }) });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.detail || `Decision failed (${response.status})`);
+          card.remove();
+          if (!approved) { assistant.bubble.textContent = "The file plan was rejected. No files were changed."; setBusy(false); return; }
+          abortController = new AbortController(); setBusy(true, "Building files..."); assistant.bubble.textContent = "Plan approved. Creating the files now...";
+          await monitorAgent(taskId, assistant, null, approval.phase_number || 1);
+        } catch (error) { approve.disabled = reject.disabled = false; assistant.bubble.textContent = `Error: ${error.message}`; showToast(error.message); }
+        finally { if (approved) { abortController = null; setBusy(false); } }
+      };
+      reject.addEventListener("click", () => decide(false)); approve.addEventListener("click", () => decide(true));
+      actions.append(reject, approve); card.append(title, description, list, actions); ui.messages.appendChild(card); scrollToBottom(true);
+    }
+
+    function renderAgentResult(task, assistant) {
+      const state = task.state || {};
+      const created = state.created_files || [];
+      const updated = state.updated_files || [];
+      const failed = state.failed_files || [];
+      assistant.bubble.textContent = state.summary || `Completed: created ${created.length} and updated ${updated.length} file(s).`;
+      if (!created.length && !updated.length && !failed.length) return;
+      const list = document.createElement("div"); list.className = "result-list";
+      [...created, ...updated].forEach((path) => {
+        const item = document.createElement("div"); item.className = "result-file";
+        const name = document.createElement("code"); name.textContent = path;
+        const open = document.createElement("button"); open.type = "button"; open.textContent = "Open";
+        open.addEventListener("click", () => { openWorkspace(); previewWorkspaceFile(path); });
+        item.append(name, open); list.appendChild(item);
+      });
+      failed.forEach((entry) => {
+        const item = document.createElement("div"); item.className = "result-file"; item.style.borderColor = "#efb3b8";
+        const name = document.createElement("code"); name.textContent = `${entry.path}: ${entry.error}`; item.appendChild(name); list.appendChild(item);
+      });
+      assistant.row.querySelector(".message-content").appendChild(list);
+
+      if (state.has_more) {
+        const continuation = document.createElement("div");
+        continuation.className = "phase-continuation";
+        const heading = document.createElement("strong");
+        heading.textContent = `Phase ${Number(state.phase_number || 1)} is complete`;
+        const description = document.createElement("p");
+        description.textContent = state.next_phase
+          ? `Suggested next phase: ${state.next_phase}`
+          : "More requirements remain. Continue when you are ready.";
+        const continueButton = document.createElement("button");
+        continueButton.type = "button";
+        continueButton.className = "action-button approve";
+        continueButton.textContent = `Continue to Phase ${Number(state.phase_number || 1) + 1}`;
+        continueButton.addEventListener("click", async () => {
+          continueButton.disabled = true;
+          const nextAssistant = createMessage("assistant", "");
+          abortController = new AbortController();
+          setBusy(true, `Planning Phase ${Number(state.phase_number || 1) + 1}...`);
+          try {
+            const allCompleted = [
+              ...(state.completed_files || []),
+              ...created,
+              ...updated
+            ].filter((value, index, values) => values.indexOf(value) === index);
+            const nextRequest = state.next_phase
+              ? `${state.request}\n\nCURRENT PHASE FOCUS:\n${state.next_phase}`
+              : state.request;
+            await startAgent(nextRequest, nextAssistant, {
+              phaseNumber: Number(state.phase_number || 1) + 1,
+              projectRoot: state.project_root,
+              completedFiles: allCompleted,
+              preserveRequest: true
+            });
+          } catch (error) {
+            nextAssistant.bubble.textContent = error.name === "AbortError"
+              ? "Phase planning stopped."
+              : `Error: ${error.message}`;
+            continueButton.disabled = false;
+          } finally {
+            abortController = null;
+            setBusy(false);
+          }
+        });
+        continuation.append(heading, description, continueButton);
+        assistant.row.querySelector(".message-content").appendChild(continuation);
+      } else if (!failed.length) {
+        const completion = document.createElement("div");
+        completion.className = "phase-continuation";
+        const heading = document.createElement("strong");
+        heading.textContent = "All planned phases are complete";
+        const description = document.createElement("p");
+        description.textContent = "The requested project has no remaining phases in its current plan.";
+        completion.append(heading, description);
+        assistant.row.querySelector(".message-content").appendChild(completion);
+      }
+      scrollToBottom(true);
+    }
+
+    function renderToolApproval(approval) {
+      const card = document.createElement("section"); card.className = "approval-card";
+      const title = document.createElement("h3"); title.textContent = `Approve ${approval.action || "file change"}`;
+      const description = document.createElement("p"); description.className = "approval-description"; description.textContent = "Review this change before Samsu++ modifies the file.";
+      const preview = document.createElement("pre"); preview.className = "file-preview"; preview.textContent = approval.preview || "No preview was supplied.";
+      const actions = document.createElement("div"); actions.className = "approval-actions";
+      const reject = document.createElement("button"); reject.className = "action-button reject"; reject.textContent = "Reject";
+      const approve = document.createElement("button"); approve.className = "action-button approve"; approve.textContent = "Approve change";
+      const decide = async (action) => {
+        approve.disabled = reject.disabled = true;
+        try {
+          const response = await fetch(`/tools/approvals/${encodePath(approval.id)}/${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, conversation_id: conversationId }) });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.detail || `Operation failed (${response.status})`);
+          card.remove(); createMessage("assistant", result.message); showToast(result.message); await loadHistory(); await loadWorkspace(currentWorkspacePath);
+        } catch (error) { approve.disabled = reject.disabled = false; showToast(error.message); }
+      };
+      reject.addEventListener("click", () => decide("reject")); approve.addEventListener("click", () => decide("approve"));
+      actions.append(reject, approve); card.append(title, description, preview, actions); ui.messages.appendChild(card); scrollToBottom(true);
+    }
+
+    async function sendMessage(text) {
+      text = String(text || "").trim();
+      if (!text || isGenerating) return;
+      followOutput = true;
+      if (ui.messages.querySelector(".welcome")) ui.messages.replaceChildren();
+      if (ui.title.textContent === "New conversation") ui.title.textContent = text.replace(/\s+/g, " ").slice(0, 58) || "New conversation";
+      createMessage("user", text);
+      const assistant = createMessage("assistant", "");
+      assistant.bubble.classList.add("typing");
+      const route = routeRequest(text);
+      setBusy(true, route.useAgent ? "Preparing files..." : "Qwen3 · Thinking");
+      abortController = new AbortController();
+      try {
+        if (route.useAgent) await startAgent(text, assistant);
+        else await streamChat(buildMessageWithFiles(text), assistant);
+      } catch (error) {
+        assistant.bubble.textContent = error.name === "AbortError" ? "Generation stopped." : `Error: ${error.message}`;
+      } finally {
+        assistant.bubble.classList.remove("typing"); abortController = null; attachedFiles = []; renderAttachments(); setBusy(false); ui.input.focus(); await loadHistory();
+      }
+    }
+
+    async function uploadFiles(files) {
+      for (const file of files) {
+        const form = new FormData(); form.append("file", file); showToast(`Importing ${file.name}...`);
+        try {
+          const response = await fetch("/files/upload", { method: "POST", body: form });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.detail || `Upload failed (${response.status})`);
+          attachedFiles.push(result); renderAttachments(); showToast(`${result.name} imported.`);
+        } catch (error) { showToast(error.message); }
+      }
+      ui.fileInput.value = "";
+    }
+    function renderAttachments() {
+      ui.attachments.replaceChildren(); ui.attachments.classList.toggle("visible", attachedFiles.length > 0);
+      attachedFiles.forEach((file, index) => {
+        const chip = document.createElement("div"); chip.className = "attachment";
+        const name = document.createElement("span"); name.className = "attachment-name"; name.textContent = file.name;
+        const remove = document.createElement("button"); remove.type = "button"; remove.className = "attachment-remove"; remove.textContent = "×";
+        remove.addEventListener("click", () => { attachedFiles.splice(index, 1); renderAttachments(); });
+        chip.append(name, remove); ui.attachments.appendChild(chip);
+      });
+    }
+
+    async function loadHistory() {
+      try {
+        const response = await fetch(`/users/${encodePath(userId)}/conversations?limit=100`);
+        if (!response.ok) throw new Error(`History failed (${response.status})`);
+        const data = await response.json();
+        conversations = Array.isArray(data) ? data : (data.conversations || []);
+        renderHistory(ui.historySearch.value);
+      } catch (error) { renderHistory(""); }
+    }
+    function renderHistory(filter = "") {
+      ui.historyList.replaceChildren();
+      const query = filter.trim().toLowerCase();
+      const visible = conversations.filter((item) => String(item.title || "New conversation").toLowerCase().includes(query));
+      ui.historyCount.textContent = String(visible.length);
+      if (!visible.length) { const empty = document.createElement("div"); empty.className = "empty"; empty.textContent = query ? "No matching chats" : "No saved conversations"; ui.historyList.appendChild(empty); return; }
+      visible.forEach((conversation) => {
+        const row = document.createElement("div"); row.className = `history-item${conversation.conversation_id === conversationId ? " active" : ""}`;
+        const open = document.createElement("button"); open.type = "button"; open.className = "history-open";
+        const name = document.createElement("span"); name.className = "history-name"; name.textContent = conversation.title || "New conversation";
+        const date = document.createElement("span"); date.className = "history-date"; date.textContent = formatDate(conversation.updated_at || conversation.created_at);
+        open.append(name, date); open.addEventListener("click", () => loadConversation(conversation.conversation_id, name.textContent));
+        const remove = document.createElement("button"); remove.type = "button"; remove.className = "history-delete"; remove.textContent = "×"; remove.title = "Delete";
+        remove.addEventListener("click", (event) => { event.stopPropagation(); deleteConversation(conversation.conversation_id, name.textContent); });
+        row.append(open, remove); ui.historyList.appendChild(row);
+      });
+    }
+    function formatDate(value) { if (!value) return ""; const date = new Date(value); return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString([], { month: "short", day: "numeric" }); }
+    async function loadConversation(id, title) {
+      abortController?.abort(); conversationId = id; localStorage.setItem("samsu_conversation_id", id); ui.title.textContent = title; ui.messages.replaceChildren(); closeMobileSidebar();
+      try {
+        const response = await fetch(`/users/${encodePath(userId)}/conversations/${encodePath(id)}/messages`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Could not load conversation.");
+        const messages = Array.isArray(data) ? data : (data.messages || []);
+        if (!messages.length) showWelcome();
+        else messages.filter((message) => ["user","assistant"].includes(message.role)).forEach((message) => { const node = createMessage(message.role, ""); renderFormattedText(node.bubble, message.content); });
+        renderHistory(ui.historySearch.value);
+      } catch (error) { showWelcome(); showToast(error.message); }
+    }
+    async function deleteConversation(id, title) {
+      if (!confirm(`Delete "${title}"?`)) return;
+      try {
+        const response = await fetch(`/users/${encodePath(userId)}/conversations/${encodePath(id)}`, { method: "DELETE" });
+        if (!response.ok) throw new Error(`Delete failed (${response.status})`);
+        if (conversationId === id) newConversation();
+        await loadHistory(); showToast("Conversation deleted.");
+      } catch (error) { showToast(error.message); }
+    }
+    function newConversation() {
+      abortController?.abort(); conversationId = createConversationId(); localStorage.setItem("samsu_conversation_id", conversationId); ui.title.textContent = "New conversation"; attachedFiles = []; renderAttachments(); showWelcome(); renderHistory(ui.historySearch.value); closeMobileSidebar(); ui.input.focus();
+    }
+
+    function openWorkspace() { ui.workspaceDrawer.classList.add("open"); ui.overlay.classList.add("open"); loadWorkspace(currentWorkspacePath); }
+    function closeDrawers() { ui.workspaceDrawer.classList.remove("open"); ui.sidebar.classList.remove("open"); ui.overlay.classList.remove("open"); }
+    function closeMobileSidebar() { ui.sidebar.classList.remove("open"); if (!ui.workspaceDrawer.classList.contains("open")) ui.overlay.classList.remove("open"); }
+    async function loadWorkspace(path = "") {
+      currentWorkspacePath = path; ui.workspacePath.textContent = path || "Workspace root"; ui.workspaceContent.innerHTML = '<div class="empty">Loading files...</div>';
+      try {
+        const response = await fetch(`/files?path=${encodeURIComponent(path)}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Could not load workspace.");
+        renderWorkspaceItems(data.items || []);
+      } catch (error) { ui.workspaceContent.innerHTML = ""; const empty = document.createElement("div"); empty.className = "empty"; empty.textContent = error.message; ui.workspaceContent.appendChild(empty); }
+    }
+    function renderWorkspaceItems(items) {
+      ui.workspaceContent.replaceChildren();
+      if (!items.length) { const empty = document.createElement("div"); empty.className = "empty"; empty.textContent = "This folder is empty."; ui.workspaceContent.appendChild(empty); return; }
+      items.forEach((item) => {
+        const button = document.createElement("button"); button.type = "button"; button.className = "workspace-item";
+        const icon = document.createElement("span"); icon.textContent = item.type === "directory" ? "▰" : "▤";
+        const name = document.createElement("span"); name.className = "workspace-item-name"; name.textContent = item.name;
+        const size = document.createElement("span"); size.className = "workspace-item-size"; size.textContent = item.type === "file" ? formatBytes(item.size) : "›";
+        button.append(icon, name, size); button.addEventListener("click", () => item.type === "directory" ? loadWorkspace(item.path) : previewWorkspaceFile(item.path));
+        ui.workspaceContent.appendChild(button);
+      });
+    }
+    async function previewWorkspaceFile(path) {
+      ui.workspaceContent.innerHTML = '<div class="empty">Reading file...</div>';
+      try {
+        const response = await fetch(`/files/read?path=${encodeURIComponent(path)}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Could not read file.");
+        ui.workspaceContent.replaceChildren();
+        const back = document.createElement("button"); back.className = "back-button"; back.type = "button"; back.textContent = "← Back to folder"; back.addEventListener("click", () => loadWorkspace(parentPath(path)));
+        const preview = document.createElement("pre"); preview.className = "file-preview";
+        preview.textContent = data.format === "text" ? data.content : JSON.stringify(data, null, 2);
+        ui.workspaceContent.append(back, preview); ui.workspacePath.textContent = path;
+      } catch (error) { showToast(error.message); loadWorkspace(parentPath(path)); }
+    }
+    function parentPath(path) { const parts = String(path).split("/").filter(Boolean); parts.pop(); return parts.join("/"); }
+    function formatBytes(value) { const bytes = Number(value || 0); if (bytes < 1024) return `${bytes} B`; if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`; return `${(bytes / 1048576).toFixed(1)} MB`; }
+
+    ui.form.addEventListener("submit", (event) => { event.preventDefault(); const text = ui.input.value.trim(); if (!text) return; ui.input.value = ""; ui.input.style.height = "auto"; sendMessage(text); });
+    ui.input.addEventListener("keydown", (event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); ui.form.requestSubmit(); } });
+    ui.input.addEventListener("input", () => { ui.input.style.height = "auto"; ui.input.style.height = `${Math.min(ui.input.scrollHeight, 180)}px`; });
+    ui.attach.addEventListener("click", () => ui.fileInput.click());
+    ui.fileInput.addEventListener("change", () => uploadFiles([...ui.fileInput.files]));
+    ui.stop.addEventListener("click", () => abortController?.abort());
+    ui.newChat.addEventListener("click", newConversation);
+    ui.historySearch.addEventListener("input", () => renderHistory(ui.historySearch.value));
+    ui.chatScroll.addEventListener("scroll", () => { followOutput = ui.chatScroll.scrollHeight - ui.chatScroll.scrollTop - ui.chatScroll.clientHeight < 110; });
+    ui.menu.addEventListener("click", () => { ui.sidebar.classList.add("open"); ui.overlay.classList.add("open"); });
+    ui.workspaceButton.addEventListener("click", openWorkspace);
+    ui.workspaceClose.addEventListener("click", closeDrawers);
+    ui.overlay.addEventListener("click", closeDrawers);
+    ui.workspaceBack.addEventListener("click", () => loadWorkspace(parentPath(currentWorkspacePath)));
+    ui.modeSwitch.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-mode]");
+      if (!button) return;
+      setRoutingMode(button.dataset.mode);
+      showToast(`${button.textContent} mode selected.`);
+      ui.input.focus();
+    });
+
+    setRoutingMode(routingMode);
+    showWelcome();
+    loadHistory().then(() => {
+      const saved = conversations.find((item) => item.conversation_id === conversationId);
+      if (saved) loadConversation(saved.conversation_id, saved.title || "Conversation");
+    });
+    ui.input.focus();
+  </script>
+</body>
+</html>
